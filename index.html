@@ -18,14 +18,14 @@ button.primary{background:#2563eb;color:white;width:100%}button:disabled{backgro
 a{color:#1d4ed8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #e2e8f0;margin:16px 0}
 </style></head><body><main>
 <h1>小說網站部署中心</h1>
-<small>手機版介面 v0.3｜本機 ZIP 結構檢查・尚未連接上傳服務</small>
+<small>手機版介面 v0.4 開發中｜本機 ZIP 結構檢查・尚未連接上傳服務</small>
 <section><div class="row"><strong>目前正式公開</strong><span class="pill">v179 · 第 1～16 章</span></div>
 <p>正式網站：<a href="https://robot.learncode53.workers.dev/" target="_blank" rel="noopener">robot.learncode53.workers.dev</a></p>
 <p>測試網站：<a href="https://little-darkness-5326.learncode53.workers.dev/" target="_blank" rel="noopener">little-darkness-5326.learncode53.workers.dev</a></p></section>
 <div class="notice"><strong>安全預覽模式。</strong>目前只會在本機讀取 ZIP 目錄資訊，檢查檔名、大小、路徑與首頁檔案；不會上傳 ZIP、存入 GitHub 或部署 Cloudflare。此檢查不能保證網站內容或音檔完整。正式版需先完成登入驗證與安全後端。</div>
 <section><h2>建立新版本</h2>
 <label for="novel">小說作品</label><select id="novel"><option value="assistant">我以為它只是個助手</option><option value="other" disabled>其他小說（待建立獨立網站）</option></select>
-<label for="version">版本號</label><input id="version" type="number" min="1" max="99999" step="1" value="180">
+<label for="version">版本號（依 ZIP 檔名自動帶入）</label><input id="version" type="number" min="1" max="99999" step="1" value="180"><small id="versionhint">選取以版本號開頭的 ZIP 後自動辨識；不一致時禁止後續上傳。</small>
 <label>版本類型</label><fieldset id="types">
 <label><input type="radio" name="kind" value="discussion" checked>討論累計版（保留最新 5 版）</label>
 <label><input type="radio" name="kind" value="preview">公開預覽版（保留最新 5 版）</label>
@@ -41,6 +41,7 @@ a{color:#1d4ed8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #e2e8f0;
 <small>下一階段：安全登入、分段上傳、後端驗證、版本清單、部署紀錄與回復功能。此版不含上傳服務。</small></section>
 </main><script>
 const zipcheck=document.getElementById('zipcheck');const zip=document.getElementById('zip'),version=document.getElementById('version'),status=document.getElementById('status'),filename=document.getElementById('filename'),target=document.getElementById('target');
+function filenameVersion(name){const m=/^(\\d{1,5})(?:[_\\-.]|$)/.exec(name);return m?Number(m[1]):null}
 function refresh(){
  const kind=document.querySelector('input[name="kind"]:checked').value;
  target.textContent=kind==='public'?'robot 正式網站（需額外確認）':'little 測試網站';
@@ -49,6 +50,8 @@ function refresh(){
  filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';
  if(!/\.zip$/i.test(f.name)){status.textContent='請選擇 .zip 檔案';return}
  if(!Number.isInteger(v)||v<1){status.textContent='請輸入有效的正整數版本號';return}
+ const fv=filenameVersion(f.name);if(fv===null){status.textContent='無法從 ZIP 檔名辨識版本號，請使用以版本號開頭的檔名';return}
+ if(v!==fv){status.textContent='版本號不一致：ZIP 為 '+fv+'，欄位為 '+v+'。請修正後才能上傳。';return}
  status.textContent='已選擇版本 '+v+'（'+({discussion:'討論累計版',preview:'公開預覽版',public:'正式公開版'}[kind]+'）。僅介面預覽，未上傳或部署。');
 }
 async function inspectZip(){
@@ -87,6 +90,6 @@ async function inspectZip(){
   zipcheck.textContent='ZIP 基本檢查通過：'+files.length+' 個檔案，含 index.html'+(prefix?'（位於 '+prefix+'）':'（根目錄）')+'。未檢查網頁內容、音檔或部署相容性；未上傳。';
  }catch(err){zipcheck.textContent='ZIP 檢查未通過：'+(err&&err.message?err.message:String(err))+'。未上傳。'}
 }
-function handleFileSelection(){const f=zip.files&&zip.files[0];if(f){filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';zipcheck.textContent='ZIP 檢查：已收到檔案，準備讀取…'}refresh();inspectZip()}
+function handleFileSelection(){const f=zip.files&&zip.files[0];if(f){const fv=filenameVersion(f.name);if(fv!==null)version.value=String(fv);filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';zipcheck.textContent='ZIP 檢查：已收到檔案，準備讀取…'}refresh();inspectZip()}
 zip.addEventListener('change',handleFileSelection);zip.addEventListener('input',handleFileSelection);version.addEventListener('input',refresh);document.querySelectorAll('input[name="kind"]').forEach(x=>x.addEventListener('change',refresh));refresh();
 </script></body></html>
