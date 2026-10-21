@@ -33,3 +33,10 @@
 - Android Chrome、iPhone Safari 各上傳相同 179 ZIP，確認伺服器接收且 SHA-256 相符。
 - 模擬中斷、重試、版本不符、損毀 ZIP、未授權請求。
 - 確認測試期間 robot 正式網站、little 測試網站及小說母版均未改動。
+
+## 2026-10-22 實際部署流程核對
+- 已讀取 `gosan53/robot-novel-site/.github/workflows/deploy-test.yml`：目前從 `site/*.zip` 讀取 ZIP，不會從 GitHub Releases 自動下載。
+- `push` 修改 `site/*.zip` 時只做檢查及儲存 extracted-preview artifact；little 部署步驟限定 `workflow_dispatch` 且 `deploy_to_little=true`。
+- 因此 Releases 手機上傳成功後，仍需另行建立「下載 Release 資產→驗證→人工確認部署」的測試工作流程。不得假設現有 Actions 已連接 Releases。
+- 尚未取得 GitHub Releases 清單及 Android 附件上傳失敗的詳細紀錄，不能宣稱已找到 Android 失敗的確切原因。
+- 為避免意外部署，先在 v0.4 開發分支完成流程設計及測試，不修改 `robot-novel-site` 的正式分支。
