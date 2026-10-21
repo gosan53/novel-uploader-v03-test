@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小說網站部署中心｜手機介面</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#1e293b;background:#f3f6fa}
+*{box-sizing:border-box}body{margin:0}main{max-width:580px;margin:auto;padding:20px 16px 55px}
+h1{font-size:1.55rem;margin:8px 0}h2{font-size:1.08rem;margin:0 0 14px}p{line-height:1.65}
+small{color:#64748b;line-height:1.5;display:block}section{background:#fff;border:1px solid #dce3eb;border-radius:15px;padding:18px;margin:14px 0}
+label{font-weight:650;display:block;margin:14px 0 7px}select,input[type=number],input[type=file]{font:inherit;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#fff}
+input[type=radio]{accent-color:#2563eb}.row{flex-wrap:wrap}.row strong{min-width:0;overflow-wrap:anywhere}#target{max-width:100%;text-align:right}.status{overflow-wrap:anywhere}fieldset{border:0;padding:0;margin:8px 0}fieldset label{display:flex;gap:9px;align-items:center;font-weight:500;margin:11px 0}
+.notice{background:#fff6db;border:1px solid #f3dc9b;padding:12px;border-radius:10px;line-height:1.6}
+.pill{display:inline-block;background:#e9f7ee;color:#146c38;border-radius:99px;padding:5px 10px;font-size:.8rem}
+.status{background:#eff4fa;border-radius:10px;padding:12px;margin-top:12px;line-height:1.6}
+button{border:0;border-radius:10px;padding:13px 16px;font:inherit;font-weight:650;cursor:pointer}
+button.primary{background:#2563eb;color:white;width:100%}button:disabled{background:#cbd5e1;color:#475569;cursor:not-allowed}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+a{color:#1d4ed8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #e2e8f0;margin:16px 0}
+</style></head><body><main>
+<h1>小說網站部署中心</h1>
+<small>手機版介面 v0.3｜本機 ZIP 結構檢查・尚未連接上傳服務</small>
+<section><div class="row"><strong>目前正式公開</strong><span class="pill">v179 · 第 1～16 章</span></div>
+<p>正式網站：<a href="https://robot.learncode53.workers.dev/" target="_blank" rel="noopener">robot.learncode53.workers.dev</a></p>
+<p>測試網站：<a href="https://little-darkness-5326.learncode53.workers.dev/" target="_blank" rel="noopener">little-darkness-5326.learncode53.workers.dev</a></p></section>
+<div class="notice"><strong>安全預覽模式。</strong>目前只會在本機讀取 ZIP 目錄資訊，檢查檔名、大小、路徑與首頁檔案；不會上傳 ZIP、存入 GitHub 或部署 Cloudflare。此檢查不能保證網站內容或音檔完整。正式版需先完成登入驗證與安全後端。</div>
+<section><h2>建立新版本</h2>
+<label for="novel">小說作品</label><select id="novel"><option value="assistant">我以為它只是個助手</option><option value="other" disabled>其他小說（待建立獨立網站）</option></select>
+<label for="version">版本號</label><input id="version" type="number" min="1" max="99999" step="1" value="180">
+<label>版本類型</label><fieldset id="types">
+<label><input type="radio" name="kind" value="discussion" checked>討論累計版（保留最新 5 版）</label>
+<label><input type="radio" name="kind" value="preview">公開預覽版（保留最新 5 版）</label>
+<label><input type="radio" name="kind" value="public">正式公開版（永久保存）</label></fieldset>
+<label for="zip">選擇網站 ZIP</label><input id="zip" type="file" accept=".zip,application/zip">
+<small id="filename">尚未選擇 ZIP</small><div class="status" id="zipcheck" role="status" aria-live="polite">ZIP 檢查：尚未開始</div>
+<hr><div class="row"><strong>預定部署目標</strong><strong id="target">little 測試網站</strong></div>
+<div class="status" id="status" role="status" aria-live="polite">狀態：等待選擇 ZIP</div>
+<button class="primary" disabled>上傳、檢查並部署（尚未啟用）</button>
+<small style="margin-top:10px">正式公開版將要求測試驗收及第二次人工確認；超過 5 版時只警示，不自動刪除。</small>
+</section>
+<section><h2>部署安全規則</h2><p>原始 ZIP 保留；正式公開版永久歸檔；討論及預覽版保留最新 5 版。每篇小說各自使用獨立的正式、測試與公開前預覽環境，共用母版不受修改。</p>
+<small>下一階段：安全登入、分段上傳、後端驗證、版本清單、部署紀錄與回復功能。此版不含上傳服務。</small></section>
+</main><script>
+const zipcheck=document.getElementById('zipcheck');const zip=document.getElementById('zip'),version=document.getElementById('version'),status=document.getElementById('status'),filename=document.getElementById('filename'),target=document.getElementById('target');
+function refresh(){
+ const kind=document.querySelector('input[name="kind"]:checked').value;
+ target.textContent=kind==='public'?'robot 正式網站（需額外確認）':'little 測試網站';
+ const f=zip.files[0],v=Number(version.value);
+ if(!f){filename.textContent='尚未選擇 ZIP';status.textContent='狀態：等待選擇 ZIP';zipcheck.textContent='ZIP 檢查：尚未開始';return}
+ filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';
+ if(!/\.zip$/i.test(f.name)){status.textContent='請選擇 .zip 檔案';return}
+ if(!Number.isInteger(v)||v<1){status.textContent='請輸入有效的正整數版本號';return}
+ status.textContent='已選擇版本 '+v+'（'+({discussion:'討論累計版',preview:'公開預覽版',public:'正式公開版'}[kind]+'）。僅介面預覽，未上傳或部署。');
+}
+async function inspectZip(){
+ const f=zip.files[0];if(!f)return;
+ zipcheck.textContent='ZIP 檢查：讀取本機 ZIP 目錄中…';
+ try{
+  if(!/\.zip$/i.test(f.name))throw Error('檔名必須以 .zip 結尾');
+  if(f.size>100*1048576)throw Error('檔案超過 100 MB，暫不接受');
+  if(f.size<22)throw Error('檔案太小，不是完整 ZIP');
+  if(typeof f.slice!=='function'||typeof FileReader==='undefined')throw Error('目前預覽器不支援檔案讀取，請在 Safari 網站測試');
+  async function readBlob(blob){if(typeof blob.arrayBuffer==='function')return blob.arrayBuffer();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('無法讀取檔案'));reader.readAsArrayBuffer(blob)})}
+  const tail=new DataView(await readBlob(f.slice(Math.max(0,f.size-65557))));
+  let e=-1;for(let i=tail.byteLength-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw Error('找不到 ZIP 結尾目錄，可能不完整');
+  const entries=tail.getUint16(e+10,true),centralSize=tail.getUint32(e+12,true),centralOffset=tail.getUint32(e+16,true);
+  if(tail.getUint16(e+4,true)!==0||tail.getUint16(e+6,true)!==0)throw Error('不支援分割 ZIP');
+  if(entries===65535||centralOffset===0xffffffff||centralSize===0xffffffff)throw Error('ZIP64 格式需要後端檢查');
+  if(centralOffset+centralSize>f.size||centralSize>20*1048576)throw Error('ZIP 目錄大小異常');
+  const view=new DataView(await readBlob(f.slice(centralOffset,centralOffset+centralSize)));
+  const decoder=new TextDecoder('utf-8');let p=0,names=[],uncompressed=0;
+  for(let i=0;i<entries;i++){
+   if(p+46>view.byteLength||view.getUint32(p,true)!==0x02014b50)throw Error('ZIP 目錄損壞');
+   const flags=view.getUint16(p+8,true),method=view.getUint16(p+10,true),size=view.getUint32(p+24,true);
+   const len=view.getUint16(p+28,true),extra=view.getUint16(p+30,true),comment=view.getUint16(p+32,true);
+   if(p+46+len+extra+comment>view.byteLength)throw Error('ZIP 檔名目錄不完整');
+   const name=decoder.decode(new Uint8Array(view.buffer,view.byteOffset+p+46,len));
+   if(!name||name.startsWith('/')||name.includes('\\')||name.split('/').includes('..'))throw Error('ZIP 含不安全的路徑');
+   if(flags&1)throw Error('ZIP 含加密項目，無法檢查');
+   if(method!==0&&method!==8)throw Error('ZIP 使用尚未支援的壓縮方式');
+   names.push(name);uncompressed+=size;p+=46+len+extra+comment;
+  }
+  if(!names.length)throw Error('ZIP 沒有檔案');
+  const prefix=names.includes('index.html')?'':(names.filter(x=>x.endsWith('/index.html')).length===1?names.find(x=>x.endsWith('/index.html')).slice(0,-10):null);
+  if(prefix===null)throw Error('找不到 index.html');
+  const files=names.filter(x=>!x.endsWith('/'));
+  zipcheck.textContent='ZIP 基本檢查通過：'+files.length+' 個檔案，含 index.html'+(prefix?'（位於 '+prefix+'）':'（根目錄）')+'。未檢查網頁內容、音檔或部署相容性；未上傳。';
+ }catch(err){zipcheck.textContent='ZIP 檢查未通過：'+(err&&err.message?err.message:String(err))+'。未上傳。'}
+}
+function handleFileSelection(){const f=zip.files&&zip.files[0];if(f){filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';zipcheck.textContent='ZIP 檢查：已收到檔案，準備讀取…'}refresh();inspectZip()}
+zip.addEventListener('change',handleFileSelection);zip.addEventListener('input',handleFileSelection);version.addEventListener('input',refresh);document.querySelectorAll('input[name="kind"]').forEach(x=>x.addEventListener('change',refresh));refresh();
+</script></body></html>
