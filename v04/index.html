@@ -43,7 +43,7 @@ a{color:#1d4ed8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #e2e8f0;
 </main><script>
 const fullfilename=document.getElementById('fullfilename'),copyname=document.getElementById('copyname');
 const zipcheck=document.getElementById('zipcheck');const zip=document.getElementById('zip'),version=document.getElementById('version'),status=document.getElementById('status'),filename=document.getElementById('filename'),target=document.getElementById('target');
-function filenameVersion(name){const m=/^(\\d{1,5})(?:[_\\-.]|$)/.exec(name);return m?Number(m[1]):null}
+function filenameVersion(name){const m=/^([0-9]{1,5})(?:[_.-]|$)/.exec(name);return m?Number(m[1]):null}
 function refresh(){
  const kind=document.querySelector('input[name="kind"]:checked').value;
  target.textContent=kind==='public'?'robot 正式網站（需額外確認）':'little 測試網站';
