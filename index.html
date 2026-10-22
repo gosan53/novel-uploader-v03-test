@@ -37,15 +37,17 @@ a{color:#1d4ed8;overflow-wrap:anywhere}hr{border:0;border-top:1px solid #e2e8f0;
 <button class="primary" disabled>上傳、檢查並部署（尚未啟用）</button>
 <small style="margin-top:10px">正式公開版將要求測試驗收及第二次人工確認；超過 5 版時只警示，不自動刪除。</small>
 </section>
-<section><h2>部署安全規則</h2><p>原始 ZIP 保留；正式公開版永久歸檔；討論及預覽版保留最新 5 版。每篇小說各自使用獨立的正式、測試與公開前預覽環境，共用母版不受修改。</p>
+<section id="release-handoff"><h2>下一階段：獨立測試 Release</h2><p>ZIP 基本檢查通過且版本號一致後，可以前往獨立測試專案的 GitHub Releases，手動附加 ZIP。此按鈕<b>不會直接上傳或部署</b>；不會進入小說正式版的 Release。</p><a id="release-link" href="https://github.com/gosan53/novel-uploader-v03-test/releases/new" target="_blank" rel="noopener" aria-disabled="true" style="display:block;text-align:center;background:#cbd5e1;color:#475569;border-radius:10px;padding:13px 16px;font-weight:650;text-decoration:none;pointer-events:none">先選擇並檢查 ZIP</a><small style="margin-top:10px">進入 GitHub 後先不要發布 Release；須確認測試標籤、附件及權限。真正的一鍵上傳尚未實作。</small></section><section><h2>部署安全規則</h2><p>原始 ZIP 保留；正式公開版永久歸檔；討論及預覽版保留最新 5 版。每篇小說各自使用獨立的正式、測試與公開前預覽環境，共用母版不受修改。</p>
 <small>下一階段：安全登入、分段上傳、後端驗證、版本清單、部署紀錄與回復功能。此版不含上傳服務。</small></section>
 </main><script>
+const releaseLink=document.getElementById('release-link');let zipPassed=false;
 const zipcheck=document.getElementById('zipcheck');const zip=document.getElementById('zip'),version=document.getElementById('version'),status=document.getElementById('status'),filename=document.getElementById('filename'),target=document.getElementById('target');
 function filenameVersion(name){const m=/^([0-9]{1,5})(?:[_.-]|$)/.exec(name);return m?Number(m[1]):null}
 function refresh(){
  const kind=document.querySelector('input[name="kind"]:checked').value;
  target.textContent=kind==='public'?'robot 正式網站（需額外確認）':'little 測試網站';
  const f=zip.files[0],v=Number(version.value);
+ if(releaseLink){const ok=zipPassed&&f&&filenameVersion(f.name)===v;releaseLink.style.pointerEvents=ok?'auto':'none';releaseLink.style.background=ok?'#2563eb':'#cbd5e1';releaseLink.style.color=ok?'white':'#475569';releaseLink.textContent=ok?'前往 GitHub 測試 Release（手動上傳）':'先選擇並檢查 ZIP';releaseLink.setAttribute('aria-disabled',ok?'false':'true')}
  if(!f){filename.textContent='尚未選擇 ZIP';status.textContent='狀態：等待選擇 ZIP';zipcheck.textContent='ZIP 檢查：尚未開始';return}
  filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';
  if(!/\.zip$/i.test(f.name)){status.textContent='請選擇 .zip 檔案';return}
@@ -56,7 +58,7 @@ function refresh(){
 }
 async function inspectZip(){
  const f=zip.files[0];if(!f)return;
- zipcheck.textContent='ZIP 檢查：讀取本機 ZIP 目錄中…';
+ zipPassed=false;refresh();zipcheck.textContent='ZIP 檢查：讀取本機 ZIP 目錄中…';
  try{
   if(!/\.zip$/i.test(f.name))throw Error('檔名必須以 .zip 結尾');
   if(f.size>100*1048576)throw Error('檔案超過 100 MB，暫不接受');
@@ -87,9 +89,9 @@ async function inspectZip(){
   const prefix=names.includes('index.html')?'':(names.filter(x=>x.endsWith('/index.html')).length===1?names.find(x=>x.endsWith('/index.html')).slice(0,-10):null);
   if(prefix===null)throw Error('找不到 index.html');
   const files=names.filter(x=>!x.endsWith('/'));
-  zipcheck.textContent='ZIP 基本檢查通過：'+files.length+' 個檔案，含 index.html'+(prefix?'（位於 '+prefix+'）':'（根目錄）')+'。未檢查網頁內容、音檔或部署相容性；未上傳。';
- }catch(err){zipcheck.textContent='ZIP 檢查未通過：'+(err&&err.message?err.message:String(err))+'。未上傳。'}
+  zipPassed=true;refresh();zipcheck.textContent='ZIP 基本檢查通過：'+files.length+' 個檔案，含 index.html'+(prefix?'（位於 '+prefix+'）':'（根目錄）')+'。未檢查網頁內容、音檔或部署相容性；未上傳。';
+ }catch(err){zipPassed=false;refresh();zipcheck.textContent='ZIP 檢查未通過：'+(err&&err.message?err.message:String(err))+'。未上傳。'}
 }
-function handleFileSelection(){const f=zip.files&&zip.files[0];if(f){const fv=filenameVersion(f.name);if(fv!==null)version.value=String(fv);filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';zipcheck.textContent='ZIP 檢查：已收到檔案，準備讀取…'}refresh();inspectZip()}
+function handleFileSelection(){zipPassed=false;const f=zip.files&&zip.files[0];if(f){const fv=filenameVersion(f.name);if(fv!==null)version.value=String(fv);filename.textContent=f.name+'（'+(f.size/1048576).toFixed(1)+' MB）';zipcheck.textContent='ZIP 檢查：已收到檔案，準備讀取…'}refresh();inspectZip()}
 zip.addEventListener('change',handleFileSelection);zip.addEventListener('input',handleFileSelection);version.addEventListener('input',refresh);document.querySelectorAll('input[name="kind"]').forEach(x=>x.addEventListener('change',refresh));refresh();
 </script></body></html>
