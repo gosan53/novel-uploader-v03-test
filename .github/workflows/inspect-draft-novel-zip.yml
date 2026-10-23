@@ -20,7 +20,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, urllib.request, pathlib
+          import json, os, urllib.request, urllib.error, pathlib
           repo = os.environ['GH_REPO']
           token = os.environ['GH_TOKEN']
           expected = os.environ['EXPECTED']
@@ -29,17 +29,15 @@ jobs:
               h = dict(headers)
               if accept: h['Accept'] = accept
               return urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=90)
-          found = []
-          for page in range(1, 6):
-              with get(f'https://api.github.com/repos/{repo}/releases?per_page=100&page={page}') as r:
-                  releases = json.load(r)
-              if not releases: break
-              for rel in releases:
-                  if rel.get('draft') and rel.get('name') == 'v0.4 Android ZIP 上傳測試':
-                      found.append(rel)
-          if len(found) != 1:
-              raise SystemExit(f'Expected exactly one matching draft release; found {len(found)}')
-          assets = [a for a in found[0].get('assets', []) if a['name'] == expected]
+          release_id = 420273060
+          try:
+              with get(f'https://api.github.com/repos/{repo}/releases/{release_id}') as r:
+                  rel = json.load(r)
+          except urllib.error.HTTPError as exc:
+              raise SystemExit(f'Cannot read draft release ID {release_id}: HTTP {exc.code}. Check Actions token permissions for draft releases.')
+          if not rel.get('draft') or rel.get('name') != 'v0.4 Android ZIP 上傳測試':
+              raise SystemExit('Release ID exists but title or draft state does not match; stopping safely.')
+          assets = [a for a in rel.get('assets', []) if a['name'] == expected]
           if len(assets) != 1:
               raise SystemExit(f'Expected exactly one matching ZIP asset; found {len(assets)}')
           a = assets[0]
